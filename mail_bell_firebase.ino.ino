@@ -7,6 +7,9 @@
 #define WIFI_SSID "mailbellwifi"
 #define WIFI_PASSWORD "1223334444"
 
+#define LISTEN_PIN 4
+#define KILL_LIGHT_PIN 5
+
 void setup_firebase() {
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -29,19 +32,30 @@ void setup() {
   setup_firebase();
 
   //Setup the other code here---
-  
+  //*****************************
+  pinMode(LISTEN_PIN, INPUT);
+  pinMode(KILL_LIGHT_PIN, OUTPUT);
+  digitalWrite(KILL_LIGHT_PIN, LOW);
+
 }
 
 //when the light is on the mail needs checked 
 //don't listen to the mailbox sensor
-bool light_is_on = true;
+bool light_is_on = false;
 
 
 //here put the code to turn off the indicator light
 void mail_was_checked() {
   Serial.println("Mail checked");
   //TODO set some pin to turn off the light
+  //*****************************************
+  digitalWrite(KILL_LIGHT_PIN, HIGH);
+  delay(500);
+  digitalWrite(KILL_LIGHT_PIN, LOW);
+
+
   
+  //*********************************************
   Firebase.setBool("needs_checking", false);
   if (Firebase.failed()) {
     Serial.print("setting needs_checking failed: ");
@@ -53,8 +67,7 @@ void mail_was_checked() {
 //code run when sensor says mail was deposited
 void mailbox_opened() {
   Serial.println("Mail deposited");
-  //TODO need to set some pin to turn on the light
-  
+
   Firebase.setBool("needs_checking", true);
   if (Firebase.failed()) {
     Serial.print("setting needs_checking failed: ");
@@ -75,17 +88,18 @@ void loop() {
       mail_was_checked();
     }
   }
-  //TODO Listen for the mailbox to tell us it was opened
+  //Listen for the mailbox to tell us it was opened
+  //****************************************************
   
-  if (millis() > last_opened + 10000) {
-    last_opened = millis();
-    if (!light_is_on) {
-      mailbox_opened();
-    }else {
-      mail_was_checked();
-    }
+  int buttonPressed = digitalRead(LISTEN_PIN);
+  // print out the state of the button:
+//  Serial.println(buttonPressed);  //should probably be remmoved //TODO+++++++++++++++++++
+
+  if (buttonPressed) {
+    mailbox_opened();
   }
     
-  
+
+  //********************************************************
   delay(100);
 }
